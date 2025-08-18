@@ -1,4 +1,3 @@
-// src/main.ts
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -22,26 +21,44 @@ async function bootstrap() {
 
   // Swagger configuration
   const config = new DocumentBuilder()
-    .setTitle('Escrow Platform API')
+    .setTitle('EscrowSecure API')
     .setDescription(
-      'API for a Nigerian e-commerce escrow platform facilitating secure transactions with escrow and dispute resolution features.',
+      'API for EscrowSecure, a Nigerian e-commerce escrow platform facilitating secure transactions with escrow and dispute resolution features.',
     )
     .setVersion('1.0')
-    .setContact('Support Team', 'http://localhost:5000', 'http://localhost:5000')
-    .setTermsOfService('https://escrow.ng/terms')
+    .setContact('Support Team', 'https://escrowsecure.ng', 'support@escrowsecure.ng')
+    .setTermsOfService('https://escrowsecure.ng/terms')
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
-    .addServer('http://localhost:5000', 'Production')
-    .addServer('http://localhost:5000', 'Development')
+    .addServer('http://localhost:5000/api', 'Development')
+    .addServer('https://api.escrowsecure.ng', 'Production')
     .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        in: 'header',
+        description: 'Enter JWT token in the format: Bearer <access_token>. Obtain via POST /auth/login.',
+      },
       'JWT-auth',
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document, {
     swaggerOptions: {
-      persistAuthorization: true,
+      persistAuthorization: true, // Persist token across page refreshes
+      displayRequestDuration: true, // Show request duration in UI
+      tryItOutEnabled: true, // Enable "Try it out" for all endpoints
+      defaultModelsExpandDepth: 2, // Expand model schemas to depth 2
+      defaultModelExpandDepth: 2, // Expand model examples to depth 2
+      docExpansion: 'list', // Expand all endpoints by default
     },
+    customSiteTitle: 'EscrowSecure API Documentation',
+    customCss: `
+      .swagger-ui .topbar { background-color: #1a202c; }
+      .swagger-ui .auth-container .auth-btn-wrapper { margin-top: 10px; }
+      .swagger-ui .auth-container label { font-weight: bold; }
+    `,
   });
 
   // Log MongoDB URI (connection status will be handled elsewhere)
