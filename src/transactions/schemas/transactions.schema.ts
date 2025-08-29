@@ -3,7 +3,7 @@ import { Document } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Transaction extends Document {
-  @Prop({ required: true })
+  @Prop({ required: false })
   buyer_id: string;
 
   @Prop({ required: true })

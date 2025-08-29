@@ -2,12 +2,42 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe } from '@nestjs/common';
-import { Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, RequestMethod } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Custom request logging middleware
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const requestLogger = new Logger('Request');
+    const { method, originalUrl, headers, body } = req;
+    const timestamp = new Date().toISOString();
+    
+    // Sanitize sensitive data (e.g., hide authorization token)
+    const sanitizedHeaders = { ...headers };
+    if (sanitizedHeaders.authorization) {
+      sanitizedHeaders.authorization = '[REDACTED]';
+    }
+    
+    // Avoid logging sensitive body fields (e.g., password)
+    const sanitizedBody = { ...body };
+    if (sanitizedBody.password) {
+      sanitizedBody.password = '[REDACTED]';
+    }
+
+    requestLogger.log({
+      timestamp,
+      method,
+      url: originalUrl,
+      headers: sanitizedHeaders,
+      body: sanitizedBody,
+    });
+
+    next();
+  });
 
   // Enable global validation pipe for DTO validation
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
@@ -46,12 +76,12 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document, {
     swaggerOptions: {
-      persistAuthorization: true, // Persist token across page refreshes
-      displayRequestDuration: true, // Show request duration in UI
-      tryItOutEnabled: true, // Enable "Try it out" for all endpoints
-      defaultModelsExpandDepth: 2, // Expand model schemas to depth 2
-      defaultModelExpandDepth: 2, // Expand model examples to depth 2
-      docExpansion: 'list', // Expand all endpoints by default
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      tryItOutEnabled: true,
+      defaultModelsExpandDepth: 2,
+      defaultModelExpandDepth: 2,
+      docExpansion: 'list',
     },
     customSiteTitle: 'EscrowSecure API Documentation',
     customCss: `
